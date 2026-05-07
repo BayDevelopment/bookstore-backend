@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\FakultasModel;
+use App\Models\ProdiModel;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,81 +15,81 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'min:3',
-                'max:100',
-                'regex:/^[\pL\s]+$/u', // hanya huruf & spasi, no angka/simbol
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email:rfc,dns',       // validasi format + cek DNS domain
-                'max:255',
-                'unique:users,email',
-            ],
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->letters()        // harus ada huruf
-                    ->mixedCase()      // harus ada huruf besar & kecil
-                    ->numbers()        // harus ada angka
-                    ->symbols()        // harus ada simbol (!@#$)
-                    ->uncompromised(), // cek apakah password pernah bocor
-            ],
             'nim' => [
                 'required',
                 'string',
                 'min:8',
                 'max:20',
-                'regex:/^[0-9]+$/',    // hanya angka
+                'regex:/^[0-9]+$/',
                 'unique:users,nim',
             ],
-            'fakultas' => [
+            'name' => [
                 'required',
                 'string',
+                'min:3',
                 'max:100',
-                'in:Teknik,Hukum,Ekonomi,FKIP,Kesehatan,Pertanian', // sesuaikan fakultas
+                'regex:/^[\pL\s]+$/u',
             ],
-            'prodi' => [
+            'email' => [
                 'required',
                 'string',
-                'max:100',
+                'email:rfc,dns',
+                'max:255',
+                'unique:users,email',
+            ],
+            'fakultas_id' => [   // ← ganti dari 'fakultas'
+                'required',
+                'exists:fakultas,id',
+            ],
+            'prodi_id' => [      // ← ganti dari 'prodi'
+                'required',
+                'exists:prodi,id',
+            ],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
             ],
         ], [
-            // Pesan error custom bahasa Indonesia
-            'name.required'     => 'Nama wajib diisi',
-            'name.min'          => 'Nama minimal 3 karakter',
-            'name.max'          => 'Nama maksimal 100 karakter',
-            'name.regex'        => 'Nama hanya boleh berisi huruf dan spasi',
-            'email.required'    => 'Email wajib diisi',
-            'email.email'       => 'Format email tidak valid',
-            'email.unique'      => 'Email sudah terdaftar',
-            'password.required' => 'Password wajib diisi',
-            'password.confirmed' => 'Konfirmasi password tidak cocok',
-            'nim.required'      => 'NIM wajib diisi',
-            'nim.min'           => 'NIM minimal 8 digit',
-            'nim.max'           => 'NIM maksimal 20 digit',
-            'nim.regex'         => 'NIM hanya boleh berisi angka',
-            'nim.unique'        => 'NIM sudah terdaftar',
-            'fakultas.required' => 'Fakultas wajib dipilih',
-            'fakultas.in'       => 'Fakultas tidak valid',
-            'prodi.required'    => 'Program studi wajib dipilih',
+            'nim.required'        => 'NIM wajib diisi',
+            'nim.min'             => 'NIM minimal 8 digit',
+            'nim.max'             => 'NIM maksimal 20 digit',
+            'nim.regex'           => 'NIM hanya boleh berisi angka',
+            'nim.unique'          => 'NIM sudah terdaftar',
+            'name.required'       => 'Nama wajib diisi',
+            'name.min'            => 'Nama minimal 3 karakter',
+            'name.max'            => 'Nama maksimal 100 karakter',
+            'name.regex'          => 'Nama hanya boleh berisi huruf dan spasi',
+            'email.required'      => 'Email wajib diisi',
+            'email.email'         => 'Format email tidak valid',
+            'email.unique'        => 'Email sudah terdaftar',
+            'fakultas_id.required' => 'Fakultas wajib dipilih',
+            'fakultas_id.exists'   => 'Fakultas tidak ditemukan',
+            'prodi_id.required'    => 'Program studi wajib dipilih',
+            'prodi_id.exists'      => 'Program studi tidak ditemukan',
+            'password.required'    => 'Password wajib diisi',
+            'password.confirmed'   => 'Konfirmasi password tidak cocok',
         ]);
 
+        // Ambil nama dari ID
+        $fakultas = FakultasModel::findOrFail($request->fakultas_id);
+        $prodi    = ProdiModel::findOrFail($request->prodi_id);
+
         $user = User::create([
+            'nim'      => trim($request->nim),
             'name'     => trim($request->name),
             'email'    => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
-            'nim'      => trim($request->nim),
-            'fakultas' => $request->fakultas,
-            'prodi'    => $request->prodi,
+            'fakultas' => $fakultas->nama_fakultas,  // simpan nama string
+            'prodi'    => $prodi->nama_prodi,        // simpan nama string
             'role'     => 'customer',
         ]);
 
-        // Kirim email verifikasi
         $user->sendEmailVerificationNotification();
 
         return response()->json([
@@ -182,10 +184,11 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Hapus token Sanctum yang sedang dipakai
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logout berhasil'
+            'message' => 'Berhasil logout'
         ]);
     }
 

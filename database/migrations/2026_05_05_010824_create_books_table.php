@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('author');
-            $table->string('category');
-            $table->string('fakultas')->nullable();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
+            $table->foreignId('fakultas_id')->nullable()->constrained('fakultas')->nullOnDelete(); // ← hapus ->after()
             $table->enum('type', ['digital', 'cetak']);
             $table->decimal('price', 10, 2);
             $table->string('cover')->nullable();
-            $table->string('file_path')->nullable(); // khusus digital
-            $table->integer('stock')->default(0);   // khusus cetak
+            $table->string('file_path')->nullable();
+            $table->integer('stock')->default(0);
             $table->text('description')->nullable();
             $table->timestamps();
         });
