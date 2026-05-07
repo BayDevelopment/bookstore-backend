@@ -30,4 +30,11 @@ class OrderModel extends Model
     {
         return $this->belongsTo(User::class);
     }
+    // App/Models/Order.php
+    protected static function booted(): void
+    {
+        static::creating(function ($order) {
+            $order->total = 0; // default, nanti diupdate setelah items ditambah
+        });
+    }
 }
