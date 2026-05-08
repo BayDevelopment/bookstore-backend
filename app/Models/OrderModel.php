@@ -26,6 +26,11 @@ class OrderModel extends Model
         return $this->hasMany(OrderItemModel::class, 'order_id');
     }
 
+    public function book()
+    {
+        return $this->belongsTo(BookModel::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

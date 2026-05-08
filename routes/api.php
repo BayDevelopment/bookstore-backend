@@ -25,7 +25,8 @@ Route::get('/categories', [CategoryController::class, 'index'])
     ->middleware('throttle:60,1');
 Route::get('/fakultas', [FakultasController::class, 'fakultas']);
 Route::get('/prodi', [FakultasController::class, 'prodi']);
-
+Route::get('/books', [BookController::class, 'index']);
+Route::get('/books/{id}', [BookController::class, 'show']);
 
 
 // =====================
@@ -72,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Order
     Route::get('/orders',             [OrderController::class, 'index']);
     Route::post('/orders',            [OrderController::class, 'store']);
+    Route::get('/orders/{id}',      [OrderController::class, 'show']);    // detail pesanan
     Route::post('/orders/{id}/proof', [OrderController::class, 'uploadProof']);
 
     // logout

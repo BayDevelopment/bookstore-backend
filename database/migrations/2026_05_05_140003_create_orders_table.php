@@ -14,16 +14,20 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
+            $table->foreignId('payment_method_id')
+                ->constrained('payment_methods')
+                ->restrictOnDelete();
+            $table->unsignedSmallInteger('quantity')->default(1);
             $table->decimal('total', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'rejected'])->default('pending');
             $table->string('payment_proof')->nullable();
             $table->enum('proof_status', [
-                'not_uploaded',   // belum upload bukti
-                'uploaded',       // sudah upload, menunggu verifikasi admin
-                'verified',       // bukti valid, admin konfirmasi
-                'invalid'         // bukti ditolak admin (blur, salah, dll)
+                'not_uploaded',
+                'uploaded',
+                'verified',
+                'invalid'
             ])->default('not_uploaded');
-            $table->text('proof_note')->nullable(); // catatan admin jika ditolak
+            $table->text('proof_note')->nullable();
             $table->timestamps();
         });
     }
