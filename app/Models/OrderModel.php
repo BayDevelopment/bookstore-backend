@@ -10,6 +10,8 @@ class OrderModel extends Model
 
     protected $fillable = [
         'user_id',
+        'payment_method_id',
+        'quantity',
         'total',
         'status',
         'payment_proof',
@@ -26,20 +28,18 @@ class OrderModel extends Model
         return $this->hasMany(OrderItemModel::class, 'order_id');
     }
 
-    public function book()
+    // public function book()
+    // {
+    //     return $this->belongsTo(BookModel::class, 'book_id');
+    // }
+
+    public function paymentMethod()
     {
-        return $this->belongsTo(BookModel::class);
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class);
-    }
-    // App/Models/Order.php
-    protected static function booted(): void
-    {
-        static::creating(function ($order) {
-            $order->total = 0; // default, nanti diupdate setelah items ditambah
-        });
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

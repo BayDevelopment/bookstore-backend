@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class OrdersTable
 {
@@ -104,6 +106,19 @@ class OrdersTable
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
+
+                    Action::make('lihat_bukti')
+                        ->label('Lihat Bukti')
+                        ->icon('heroicon-o-photo')
+                        ->color('info')
+                        ->visible(fn($record) => !empty($record->payment_proof))
+                        ->modalHeading('Bukti Pembayaran')
+                        ->modalWidth('md')
+                        ->modalContent(fn($record) => view('filament.modals.payment-proof', [
+                            'record' => $record,
+                        ]))
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup'),
 
                     DeleteAction::make()
                         ->requiresConfirmation()

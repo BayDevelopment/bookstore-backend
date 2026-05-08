@@ -50,7 +50,18 @@ class OrderForm
                             ])
                             ->default('pending')
                             ->required()
+                            ->reactive() // ⬅️ WAJIB biar perubahan langsung update field lain
                             ->disabled(fn($record) => $record?->status === 'completed'),
+
+                        Textarea::make('proof_note')
+                            ->label('Catatan Bukti')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->placeholder('Tambahkan catatan jika bukti ditolak...')
+                            ->visible(fn($get) => $get('status') === 'rejected') // ⬅️ tampil hanya saat rejected
+                            ->required(fn($get) => $get('status') === 'rejected') // ⬅️ wajib isi kalau rejected
+                            ->disabled(fn($record) => $record?->status === 'completed')
+                            ->helperText('Wajib diisi jika bukti pembayaran ditolak'),
 
                     ])->columnSpanFull(),
 
@@ -62,9 +73,12 @@ class OrderForm
                         FileUpload::make('payment_proof')
                             ->label('Bukti Pembayaran')
                             ->image()
-                            ->directory('payment-proofs')
-                            ->visibility('private')
+                            ->directory('payment_proofs')
+                            ->visibility('public') // ← ganti dari 'private' ke 'public'
                             ->maxSize(2048)
+                            ->imagePreviewHeight('200')
+                            ->openable()           // ← tombol buka gambar di form edit
+                            ->downloadable()       // ← tombol download
                             ->helperText('Upload foto/screenshot bukti transfer (maks. 2MB)'),
 
                         Select::make('proof_status')
@@ -79,15 +93,6 @@ class OrderForm
                             ->required()
                             ->disabled(fn($record) => $record?->status === 'completed')
                             ->helperText('Status verifikasi bukti pembayaran dari admin'),
-
-                        Textarea::make('proof_note')
-                            ->label('Catatan Bukti')
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->placeholder('Tambahkan catatan jika bukti ditolak atau ada keterangan tambahan...')
-                            ->disabled(fn($record) => $record?->status === 'completed')
-                            ->helperText('Isi catatan jika bukti pembayaran ditolak atau perlu keterangan'),
-
                     ])->columnSpanFull(),
             ]);
     }
