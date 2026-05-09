@@ -11,11 +11,10 @@ class PaymentMethodController extends Controller
     public function index(): JsonResponse
     {
         $methods = PaymentMethod::where('is_active', true)
+            ->select('id', 'name', 'code', 'description', 'bank_name', 'account_name', 'account_number')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        return response()->json([
-            'data' => $methods
-        ]);
+        return response()->json(['data' => $methods]);
     }
 }

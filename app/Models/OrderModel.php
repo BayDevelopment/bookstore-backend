@@ -42,4 +42,8 @@ class OrderModel extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    public function book()
+    {
+        return $this->belongsTo(BookModel::class, 'book_id');
+    }
 }

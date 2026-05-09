@@ -23,31 +23,67 @@ class PaymentsTable
                 TextColumn::make('name')
                     ->label('Nama Metode')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
 
                 TextColumn::make('code')
                     ->label('Kode')
                     ->badge()
                     ->color('primary')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable()
+                    ->tooltip('Klik untuk copy'),
+
+                // 🔥 Status tipe (manual vs gateway)
+                TextColumn::make('type')
+                    ->label('Jenis')
+                    ->getStateUsing(
+                        fn($record) =>
+                        $record->midtrans_payment_type ? 'Gateway' : 'Manual'
+                    )
+                    ->badge()
+                    ->color(
+                        fn($state) =>
+                        $state === 'Gateway' ? 'success' : 'warning'
+                    ),
 
                 TextColumn::make('midtrans_payment_type')
-                    ->label('Tipe Midtrans')
-                    ->placeholder('-')
+                    ->label('Midtrans')
                     ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'gray'),
+                    ->getStateUsing(
+                        fn($record) =>
+                        $record->midtrans_payment_type ?: 'No Midtrans'
+                    )
+                    ->color(
+                        fn($state) =>
+                        $state === 'No Midtrans' ? 'danger' : 'success'
+                    ),
+
+                // 🔥 Info rekening (kalau ada)
+                TextColumn::make('account_number')
+                    ->label('Rekening')
+                    ->formatStateUsing(fn($state) => $state ? '****' . substr($state, -4) : '-')
+                    ->tooltip(
+                        fn($record) =>
+                        $record->account_name
+                            ? "{$record->bank_name} - {$record->account_name}"
+                            : null
+                    ),
 
                 IconColumn::make('is_active')
                     ->label('Status')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle'),
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
 
                 TextColumn::make('created_at')
                     ->label('Dibuat')
-                    ->dateTime('d M Y H:i')
+                    ->since() // 🔥 lebih readable (e.g. "2 jam lalu")
                     ->sortable(),
             ])
+
             ->filters([
                 SelectFilter::make('midtrans_payment_type')
                     ->label('Tipe Midtrans')
@@ -57,13 +93,6 @@ class PaymentsTable
                         'qris'           => 'QRIS',
                         'shopeepay'      => 'ShopeePay',
                         'credit_card'    => 'Kartu Kredit',
-                        'cstore'         => 'Convenience Store',
-                        'echannel'       => 'Mandiri Bill',
-                        'bca_klikbca'    => 'KlikBCA',
-                        'bca_klikpay'    => 'BCA KlikPay',
-                        'cimb_clicks'    => 'CIMB Clicks',
-                        'danamon_online' => 'Danamon Online',
-                        'uob_ezpay'      => 'UOB EZPay',
                     ])
                     ->placeholder('Semua'),
 
@@ -73,27 +102,28 @@ class PaymentsTable
                     ->falseLabel('Nonaktif')
                     ->placeholder('Semua'),
             ])
-            ->recordActions([
-                ActionGroup::make(
-                    [
-                        EditAction::make(),
 
-                        DeleteAction::make()
-                            ->requiresConfirmation()
-                            ->modalHeading('Hapus data?')
-                            ->modalDescription('Data akan dipindahkan ke trash (bisa dikembalikan).')
-                            ->successNotification(
-                                Notification::make()
-                                    ->title('Berhasil')
-                                    ->body('Data berhasil dihapus (soft delete)')
-                                    ->success()
-                            ),
-                    ]
-                )->label('Aksi')
+            ->recordActions([
+                ActionGroup::make([
+                    EditAction::make(),
+
+                    DeleteAction::make()
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus metode pembayaran?')
+                        ->modalDescription('Data akan dihapus (soft delete).')
+                        ->successNotification(
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Metode pembayaran berhasil dihapus')
+                                ->success()
+                        ),
+                ])
+                    ->label('Aksi')
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->button()
-                    ->outlined()
+                    ->outlined(),
             ])
+
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

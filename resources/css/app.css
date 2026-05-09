@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -6,6 +6,57 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+}
+@layer components {
+    /* ITEM SIDEBAR */
+    .fi-sidebar-nav-item {
+        position: relative;
+        border-radius: 10px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* HOVER ORANGE */
+    .fi-sidebar-nav-item:hover {
+        background-color: rgb(249 115 22 / 0.12);
+        color: rgb(249 115 22);
+    }
+
+    /* ACTIVE ITEM */
+    .fi-sidebar-nav-item.fi-active,
+    .fi-sidebar-nav-item[aria-current="page"] {
+        background-color: rgb(249 115 22 / 0.15);
+        color: rgb(249 115 22);
+        font-weight: 600;
+    }
+
+    /* DOT KIRI */
+    .fi-sidebar-nav-item::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        border-radius: 9999px;
+        transform: translateY(-50%);
+        background-color: rgb(156 163 175);
+        transition: all 0.2s ease;
+    }
+
+    /* DOT HOVER */
+    .fi-sidebar-nav-item:hover::before {
+        background-color: rgb(249 115 22);
+    }
+
+    /* DOT ACTIVE */
+    .fi-sidebar-nav-item.fi-active::before,
+    .fi-sidebar-nav-item[aria-current="page"]::before {
+        background-color: rgb(249 115 22);
+        width: 9px;
+        height: 9px;
+    }
 }

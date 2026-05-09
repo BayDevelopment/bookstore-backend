@@ -11,6 +11,9 @@ class PaymentModel extends Model
     protected $fillable = [
         'name',
         'code',
+        'account_number',
+        'account_name',
+        'bank_name',
         'description',
         'midtrans_payment_type',
         'is_active',

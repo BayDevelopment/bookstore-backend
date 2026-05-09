@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('name');                       // Transfer Bank, Bayar di Tempat
-            $table->string('code')->unique();             // transfer, cash
+            $table->string('name');
+            $table->string('code')->unique();
             $table->string('description')->nullable();
-            $table->string('midtrans_payment_type')       // bank_transfer, gopay, qris, dll
-                ->nullable();                           // null = cash/manual
+            $table->string('midtrans_payment_type')->nullable();
+
+            $table->string('account_number')->nullable();
+            $table->string('account_name')->nullable();
+            $table->string('bank_name')->nullable();
+
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

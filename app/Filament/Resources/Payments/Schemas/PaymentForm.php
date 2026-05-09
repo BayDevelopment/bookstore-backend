@@ -21,19 +21,27 @@ class PaymentForm
                         TextInput::make('name')
                             ->label('Nama Metode')
                             ->required()
+                            ->maxLength(100)
+                            ->helperText('Contoh: Transfer BCA, QRIS, COD')
                             ->live(onBlur: true)
                             ->afterStateUpdated(
                                 fn($state, callable $set) =>
-                                $set('code', Str::slug($state))
+                                $set('code', Str::slug(trim($state)))
                             ),
 
                         TextInput::make('code')
                             ->label('Kode Unik')
                             ->disabled()
-                            ->dehydrated() // tetap tersimpan ke database
+                            ->dehydrated()
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->maxLength(50),
+                            ->maxLength(50)
+                            ->regex('/^[a-z0-9\-]+$/')
+                            ->helperText('Otomatis dari nama. Hanya huruf kecil, angka, dan tanda -')
+                            ->validationMessages([
+                                'regex' => 'Kode hanya boleh huruf kecil, angka, dan tanda strip (-).',
+                                'unique' => 'Kode ini sudah digunakan.',
+                            ]),
 
                         Textarea::make('description')
                             ->label('Deskripsi')
@@ -41,12 +49,49 @@ class PaymentForm
                             ->nullable()
                             ->rows(3)
                             ->maxLength(500)
+                            ->helperText('Opsional. Maksimal 500 karakter.')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
 
+                Section::make('Rekening (Manual Transfer)')
+                    ->description('Wajib diisi jika tidak menggunakan Midtrans.')
+                    ->schema([
+                        TextInput::make('bank_name')
+                            ->label('Nama Bank')
+                            ->maxLength(50)
+                            ->helperText('Contoh: BCA, Mandiri, BNI')
+                            ->required(fn($get) => !$get('midtrans_payment_type'))
+                            ->validationMessages([
+                                'required' => 'Nama bank wajib diisi untuk transfer manual.',
+                            ]),
+
+                        TextInput::make('account_number')
+                            ->label('Nomor Rekening')
+                            ->numeric()
+                            ->maxLength(30)
+                            ->helperText('Masukkan hanya angka, tanpa spasi atau simbol.')
+                            ->required(fn($get) => !$get('midtrans_payment_type'))
+                            ->rule('digits_between:6,30')
+                            ->validationMessages([
+                                'required' => 'Nomor rekening wajib diisi.',
+                                'digits_between' => 'Nomor rekening harus 6–30 digit angka.',
+                            ])
+                            ->dehydrateStateUsing(fn($state) => preg_replace('/\D/', '', $state)), // sanitasi
+
+                        TextInput::make('account_name')
+                            ->label('Atas Nama')
+                            ->maxLength(100)
+                            ->helperText('Nama pemilik rekening.')
+                            ->required(fn($get) => !$get('midtrans_payment_type'))
+                            ->validationMessages([
+                                'required' => 'Nama pemilik rekening wajib diisi.',
+                            ]),
+                    ])
+                    ->columns(1),
+
                 Section::make('Konfigurasi Midtrans')
-                    ->description('Kosongkan jika metode ini manual / bayar di tempat.')
+                    ->description('Gunakan ini jika pembayaran via gateway otomatis.')
                     ->schema([
                         Select::make('midtrans_payment_type')
                             ->label('Tipe Pembayaran Midtrans')
@@ -56,7 +101,7 @@ class PaymentForm
                                 'bank_transfer'  => 'Bank Transfer',
                                 'qris'           => 'QRIS',
                             ])
-                            ->helperText('Sesuai payment_type Midtrans API.')
+                            ->helperText('Jika dipilih, field rekening manual akan diabaikan.')
                             ->columnSpanFull(),
                     ]),
 
@@ -64,9 +109,8 @@ class PaymentForm
                     ->schema([
                         Toggle::make('is_active')
                             ->label('Aktif')
-                            ->helperText('Matikan untuk menyembunyikan dari pilihan customer.')
-                            ->default(true)
-                            ->inline(false),
+                            ->helperText('Nonaktifkan jika metode tidak ingin ditampilkan ke customer.')
+                            ->default(true),
                     ]),
             ]);
     }

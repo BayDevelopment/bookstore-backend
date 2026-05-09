@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderConfirmationMail;
 use App\Models\BookModel;
+use App\Models\CartModel;
 use App\Models\OrderItemModel;
 use App\Models\OrderModel;
-use App\Models\PaymentModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
 {
@@ -24,53 +25,68 @@ class OrderController extends Controller
         return response()->json(['data' => $orders]);
     }
 
-    // POST /api/orders
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'book_id'           => 'required|exists:books,id',
-            'quantity'          => 'required|integer|min:1',
+            'items'             => 'required|array|min:1',
+            'items.*.book_id'   => 'required|exists:books,id',
+            'items.*.quantity'  => 'required|integer|min:1|max:10',
             'payment_method_id' => 'required|exists:payment_methods,id',
+            'from_cart'         => 'boolean',
         ]);
-
-        $book = BookModel::findOrFail($validated['book_id']);
-
-        if ($book->stock < $validated['quantity']) {
-            return response()->json(['message' => 'Stok tidak mencukupi.'], 422);
-        }
 
         $order = null;
 
         try {
-            DB::transaction(function () use ($validated, $book, &$order) {
+            DB::transaction(function () use ($validated, $request, &$order) {
+                $total = 0;
+                $books = [];
+
+                foreach ($validated['items'] as $item) {
+                    $book = BookModel::lockForUpdate()->findOrFail($item['book_id']);
+
+                    if ($book->stock < $item['quantity']) {
+                        throw new \Exception("Stok buku \"{$book->title}\" tidak mencukupi.");
+                    }
+
+                    $total += $book->price * $item['quantity'];
+                    $books[] = ['book' => $book, 'quantity' => $item['quantity']];
+                }
+
                 $order = OrderModel::create([
-                    'user_id'           => Auth::id(),
+                    'user_id'           => $request->user()->id,
                     'payment_method_id' => $validated['payment_method_id'],
-                    'quantity'          => $validated['quantity'],
-                    'total'             => $book->price * $validated['quantity'],
+                    'total'             => $total,
                     'status'            => 'pending',
                 ]);
 
-                OrderItemModel::create([
-                    'order_id' => $order->id,
-                    'book_id'  => $book->id,
-                    'qty'      => $validated['quantity'],
-                    'price'    => $book->price,
-                ]);
+                foreach ($books as $entry) {
+                    OrderItemModel::create([
+                        'order_id' => $order->id,
+                        'book_id'  => $entry['book']->id,
+                        'qty'      => $entry['quantity'],
+                        'price'    => $entry['book']->price,
+                    ]);
 
-                $book->decrement('stock', $validated['quantity']);
+                    $entry['book']->decrement('stock', $entry['quantity']);
+                }
+
+                if (!empty($validated['from_cart'])) {
+                    CartModel::where('user_id', $request->user()->id)->delete();
+                }
             });
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Gagal membuat pesanan.',
-                'debug'   => $e->getMessage(), // hapus saat production
-            ], 500);
-        }
 
-        return response()->json(['data' => $order->load('items.book')], 201);
+            Mail::to($request->user()->email)
+                ->queue(new OrderConfirmationMail(
+                    $order->load(['items.book', 'paymentMethod', 'user'])
+                ));
+
+            return response()->json(['data' => $order->load('items.book')], 201);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
-    // GET /api/orders/{id}
     public function show(Request $request, $id)
     {
         $order = OrderModel::with(['items.book', 'paymentMethod'])
@@ -80,11 +96,26 @@ class OrderController extends Controller
         return response()->json(['data' => $order]);
     }
 
-    // POST /api/orders/{id}/payment
     public function uploadPayment(Request $request, $id)
     {
         $request->validate([
-            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'payment_proof' => [
+                'required',
+                'file',
+                'mimes:jpg,jpeg,png',
+                'max:2048',
+                function ($attribute, $value, $fail) {
+                    $mime = $value->getMimeType();
+                    if (!in_array($mime, ['image/jpeg', 'image/png'])) {
+                        $fail('File harus berupa gambar JPG atau PNG.');
+                    }
+                },
+            ],
+        ], [
+            'payment_proof.required' => 'Bukti pembayaran wajib diupload.',
+            'payment_proof.file'     => 'Upload harus berupa file.',
+            'payment_proof.mimes'    => 'Format file harus JPG atau PNG.',
+            'payment_proof.max'      => 'Ukuran file maksimal 2MB.',
         ]);
 
         $order = OrderModel::where('user_id', $request->user()->id)
@@ -100,6 +131,10 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'Order sudah diproses, tidak bisa upload bukti.',
             ], 422);
+        }
+
+        if ($order->payment_proof) {
+            Storage::disk('public')->delete($order->payment_proof);
         }
 
         $path = $request->file('payment_proof')->store('payment_proofs', 'public');

@@ -9,10 +9,11 @@ use Illuminate\Http\Request;
 
 class FakultasController extends Controller
 {
+    // FakultasController.php
     public function fakultas()
     {
-        $fakultas = FakultasModel::where('is_active', true)
-            ->select('id', 'nama_fakultas', 'kode_fakultas')
+        $fakultas = FakultasModel::select('id', 'nama_fakultas', 'kode_fakultas')
+            // ->where('is_active', true) // ← comment dulu
             ->orderBy('nama_fakultas')
             ->get();
 
