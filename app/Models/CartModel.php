@@ -12,6 +12,11 @@ class CartModel extends Model
         'user_id',
         'book_id',
         'qty',
+        'type',
+    ];
+
+    protected $casts = [
+        'qty' => 'integer',
     ];
 
     public function book()
@@ -22,5 +27,11 @@ class CartModel extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Helper: subtotal
+    public function subtotal(): float
+    {
+        return (float) $this->book->priceFor($this->type) * $this->qty;
     }
 }

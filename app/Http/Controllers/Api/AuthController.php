@@ -9,7 +9,8 @@ use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Password as PasswordFacade; // ✅ FIX
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -78,16 +79,15 @@ class AuthController extends Controller
             'password.confirmed'   => 'Konfirmasi password tidak cocok',
         ]);
 
-        $fakultas = FakultasModel::findOrFail($request->fakultas_id);
-        $prodi    = ProdiModel::findOrFail($request->prodi_id);
+        // optional: sebenarnya gak wajib find kalau cuma simpan ID
+        FakultasModel::findOrFail($request->fakultas_id);
+        ProdiModel::findOrFail($request->prodi_id);
 
         $user = User::create([
             'nim'         => trim($request->nim),
             'name'        => trim($request->name),
             'email'       => strtolower(trim($request->email)),
             'password'    => Hash::make($request->password),
-            'fakultas'    => $fakultas->nama_fakultas,
-            'prodi'       => $prodi->nama_prodi,
             'fakultas_id' => $request->fakultas_id,
             'prodi_id'    => $request->prodi_id,
             'role'        => 'customer',
@@ -128,9 +128,18 @@ class AuthController extends Controller
 
         $user = User::where('email', mb_strtolower(trim($request->email)))->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
             cache()->put($key, $attempts + 1, now()->addMinutes(5));
-            return response()->json(['message' => 'Email atau password salah'], 401);
+            return response()->json([
+                'message' => 'Email tidak terdaftar.',
+            ], 401);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            cache()->put($key, $attempts + 1, now()->addMinutes(5));
+            return response()->json([
+                'message' => 'Password salah.',
+            ], 401);
         }
 
         if (!$user->hasVerifiedEmail()) {
@@ -158,7 +167,7 @@ class AuthController extends Controller
                 'prodi'             => $user->prodi,
                 'fakultas_id'       => $user->fakultas_id,
                 'prodi_id'          => $user->prodi_id,
-                'email_verified_at' => $user->email_verified_at, // ✅
+                'email_verified_at' => $user->email_verified_at,
             ],
         ]);
     }
@@ -178,7 +187,7 @@ class AuthController extends Controller
                 'prodi'             => $user->prodi,
                 'fakultas_id'       => $user->fakultas_id,
                 'prodi_id'          => $user->prodi_id,
-                'email_verified_at' => $user->email_verified_at, // ✅
+                'email_verified_at' => $user->email_verified_at,
             ],
         ]);
     }
@@ -187,10 +196,6 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => ['required', 'email', 'exists:users,email'],
-        ], [
-            'email.required' => 'Email wajib diisi',
-            'email.email'    => 'Format email tidak valid',
-            'email.exists'   => 'Email tidak ditemukan',
         ]);
 
         $user = User::where('email', mb_strtolower(trim($request->email)))->first();
@@ -208,27 +213,27 @@ class AuthController extends Controller
         ]);
     }
 
-    // ── FORGOT PASSWORD ──────────────────────────────────────────────
     public function forgotPassword(Request $request)
     {
         $request->validate([
             'email' => ['required', 'email', 'exists:users,email'],
-        ], [
-            'email.required' => 'Email wajib diisi',
-            'email.email'    => 'Format email tidak valid',
-            'email.exists'   => 'Email tidak ditemukan',
         ]);
 
-        $status = Password::sendResetLink(['email' => mb_strtolower(trim($request->email))]);
+        $status = PasswordFacade::sendResetLink([
+            'email' => mb_strtolower(trim($request->email))
+        ]);
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json(['message' => 'Link reset password telah dikirim ke email kamu.']);
+        if ($status === PasswordFacade::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'Link reset password telah dikirim ke email kamu.'
+            ]);
         }
 
-        return response()->json(['message' => 'Gagal mengirim link reset password.'], 422);
+        return response()->json([
+            'message' => 'Gagal mengirim link reset password.'
+        ], 422);
     }
 
-    // ── RESET PASSWORD ───────────────────────────────────────────────
     public function resetPassword(Request $request)
     {
         $request->validate([
@@ -237,35 +242,21 @@ class AuthController extends Controller
             'password' => [
                 'required',
                 'confirmed',
-                'min:8',
-                'max:255',
-                \Illuminate\Validation\Rules\Password::min(8)
+                Password::min(8)
                     ->letters()
                     ->mixedCase()
                     ->numbers()
                     ->symbols(),
             ],
-        ], [
-            'token.required'     => 'Token tidak valid.',
-            'email.required'     => 'Email wajib diisi.',
-            'email.email'        => 'Format email tidak valid.',
-            'email.exists'       => 'Email tidak ditemukan.',
-            'password.required'  => 'Password wajib diisi.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'password.min'       => 'Password minimal 8 karakter.',
-            'password.letters'   => 'Password harus mengandung huruf.',
-            'password.mixed'     => 'Password harus mengandung huruf besar dan kecil.',
-            'password.numbers'   => 'Password harus mengandung angka.',
-            'password.symbols'   => 'Password harus mengandung simbol.',
         ]);
 
-        $status = Password::reset(
+        $status = PasswordFacade::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
                     'password'          => Hash::make($password),
                     'remember_token'    => Str::random(60),
-                    'email_verified_at' => now(), // ✅ pastikan ini ada
+                    'email_verified_at' => now(),
                 ])->save();
 
                 $user->tokens()->delete();
@@ -273,8 +264,10 @@ class AuthController extends Controller
             }
         );
 
-        if ($status === Password::PASSWORD_RESET) {
-            return response()->json(['message' => 'Password berhasil direset. Silakan login.']);
+        if ($status === PasswordFacade::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Password berhasil direset. Silakan login.'
+            ]);
         }
 
         return response()->json([

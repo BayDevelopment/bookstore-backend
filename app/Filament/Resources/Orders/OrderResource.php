@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\URL;
 
 class OrderResource extends Resource
 {
@@ -42,6 +43,8 @@ class OrderResource extends Resource
     }
     protected static ?string $navigationLabel = 'Order';
     protected static ?int    $navigationSort  = 4;
+
+
     // LAST ADD
 
     public static function form(Schema $schema): Schema

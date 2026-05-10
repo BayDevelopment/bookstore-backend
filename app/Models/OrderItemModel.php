@@ -12,11 +12,15 @@ class OrderItemModel extends Model
         'order_id',
         'book_id',
         'qty',
+        'type',
         'price',
+        'download_count'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'qty'   => 'integer',
+        'download_count' => 'integer',
     ];
 
     public function order()
@@ -27,5 +31,20 @@ class OrderItemModel extends Model
     public function book()
     {
         return $this->belongsTo(BookModel::class, 'book_id');
+    }
+
+    public function subtotal(): float
+    {
+        return (float) $this->price * $this->qty;
+    }
+
+    public function isPrint(): bool
+    {
+        return $this->type === 'print';
+    }
+
+    public function isPdf(): bool
+    {
+        return $this->type === 'pdf';
     }
 }

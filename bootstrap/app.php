@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\DownloadProtectMiddleware;
 use App\Http\Middleware\EnsureEmailVerified;
+use App\Http\Middleware\EnsureOrderOwner;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'verified' => EnsureEmailVerified::class,
+            'order.owner' => EnsureOrderOwner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\OrderModel;
 use App\Observers\OrderObserver;
+use App\Policies\OrderPolicy;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

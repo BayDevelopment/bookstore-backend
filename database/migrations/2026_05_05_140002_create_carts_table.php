@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('book_id')->constrained()->onDelete('cascade');
             $table->integer('qty')->default(1);
+            $table->enum('type', ['print', 'pdf']);
             $table->timestamps();
         });
     }

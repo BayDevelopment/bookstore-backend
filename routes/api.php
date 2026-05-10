@@ -5,8 +5,8 @@ use App\Http\Controllers\Api\BookController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DownloadController;
 use App\Http\Controllers\Api\FakultasController;
-use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\ProfileController;
@@ -33,7 +33,6 @@ Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
 // ── VERIFIKASI EMAIL ─────────────────────────────────────────────────────────
 Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
     $user = User::findOrFail($id);
-
     $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
 
     if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
@@ -49,6 +48,12 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     return redirect($frontendUrl . '/login?verified=1');
 })->middleware('signed')->name('verification.verify');
 
+
+// Di LUAR auth:sanctum — token dihandle manual di controller
+Route::get('/orders/{order}/download/{book}', [DownloadController::class, 'download'])
+    ->name('pdf.download');
+
+
 // ── PROTECTED ────────────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',      [AuthController::class, 'me']);
@@ -56,19 +61,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
-    Route::get('/cart/count',    [CartController::class, 'count']);
-    Route::get('/cart',          [CartController::class, 'index']);
-    Route::post('/cart',         [CartController::class, 'store']);
-    Route::patch('/cart/{id}',   [CartController::class, 'update']);
-    Route::delete('/cart/{id}',  [CartController::class, 'destroy']);
+    // Cart
+    Route::get('/cart/count',   [CartController::class, 'count']);
+    Route::get('/cart',         [CartController::class, 'index']);
+    Route::post('/cart',        [CartController::class, 'store']);
+    Route::patch('/cart/{id}',  [CartController::class, 'update']);
+    Route::delete('/cart/{id}', [CartController::class, 'destroy']);
 
-    Route::get('/orders',                [OrderController::class, 'index']);
-    Route::post('/orders',               [OrderController::class, 'store']);
-    Route::get('/orders/{id}',           [OrderController::class, 'show']);
-    Route::post('/orders/{id}/payment',  [OrderController::class, 'uploadPayment']);
+    // Orders
+    Route::get('/orders',  [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
 
-    Route::get('/profile',              [ProfileController::class, 'show']);
-    Route::put('/profile',              [ProfileController::class, 'update']);
-    Route::put('/profile/password',     [ProfileController::class, 'updatePassword']);
-    Route::post('/profile/logout-all',  [ProfileController::class, 'logoutAll']);
+    Route::middleware('order.owner')->group(function () {
+        Route::get('/orders/{id}',           [OrderController::class, 'show']);
+        Route::post('/orders/{id}/payment',  [OrderController::class, 'uploadPayment']);
+    });
+
+    // Profile
+    Route::get('/profile',             [ProfileController::class, 'show']);
+    Route::put('/profile',             [ProfileController::class, 'update']);
+    Route::put('/profile/password',    [ProfileController::class, 'updatePassword']);
+    Route::post('/profile/logout-all', [ProfileController::class, 'logoutAll']);
 });
