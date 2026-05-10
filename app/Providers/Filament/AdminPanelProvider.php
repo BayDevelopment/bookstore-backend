@@ -10,6 +10,7 @@ use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -29,11 +30,28 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset()
             ->font('poppins')
             ->colors([
                 'primary' => Color::Amber,
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn() => new HtmlString('
+                <div style="text-align:center; margin-top:20px; font-size:12px; color:#6b7280;">
+                    Developed by <strong>Bayu Albar Ladici</strong>
+                </div>
+            ')
+            )
+            ->renderHook(
+                PanelsRenderHook::AUTH_PASSWORD_RESET_REQUEST_FORM_AFTER,
+                fn() => new HtmlString('
+                <div style="text-align:center; margin-top:20px; font-size:12px; color:#6b7280;">
+                    Developed by <strong>Bayu Albar Ladici</strong>
+                </div>
+            ')
+            )
             ->brandName(new HtmlString('
                 <span style="font-style: italic; font-weight: 400; color: #f97316;">
                     BookStore
