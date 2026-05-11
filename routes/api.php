@@ -49,12 +49,12 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 })->middleware('signed')->name('verification.verify');
 
 
-// Di LUAR auth:sanctum — token dihandle manual di controller
 Route::get('/orders/{order}/download/{book}', [DownloadController::class, 'download'])
-    ->name('pdf.download');
+    ->middleware('signed')
+    ->name('download.pdf');
 
 
-// ── PROTECTED ────────────────────────────────────────────────────────────────
+// ── PROTECTED (auth:sanctum) ─────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',      [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -73,9 +73,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
 
     Route::middleware('order.owner')->group(function () {
-        Route::get('/orders/{id}',           [OrderController::class, 'show']);
-        Route::post('/orders/{id}/payment',  [OrderController::class, 'uploadPayment']);
+        Route::get('/orders/{id}',          [OrderController::class, 'show']);
+        Route::post('/orders/{id}/payment', [OrderController::class, 'uploadPayment']);
     });
+
+    // Generate signed download URL — butuh login + ownership dicek di controller
+    Route::get('/orders/{order}/download-link/{book}', [DownloadController::class, 'generateLink']);
 
     // Profile
     Route::get('/profile',             [ProfileController::class, 'show']);

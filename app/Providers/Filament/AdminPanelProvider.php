@@ -2,20 +2,19 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomRequestPasswordReset;
+use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\HtmlString;
@@ -30,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->passwordReset()
+            ->passwordReset(CustomRequestPasswordReset::class) // ✅ cukup ini
             ->font('poppins')
             ->colors([
                 'primary' => Color::Amber,
@@ -56,9 +55,9 @@ class AdminPanelProvider extends PanelProvider
                 <span style="font-style: italic; font-weight: 400; color: #f97316;">
                     BookStore
                 </span>
-            <span class="italic font-semibold ml-1 text-black dark:text-white">
-                Panel
-            </span>
+                <span class="italic font-semibold ml-1 text-black dark:text-white">
+                    Panel
+                </span>
             '))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -70,7 +69,6 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\StatsDashboard::class,
                 \App\Filament\Widgets\RevenueChart::class,
                 \App\Filament\Widgets\CustomerChart::class,
-                // \App\Filament\Widgets\CategoryChart::class,
                 \App\Filament\Widgets\TopProductChart::class,
                 \App\Filament\Widgets\RecentOrders::class,
             ])
@@ -80,7 +78,7 @@ class AdminPanelProvider extends PanelProvider
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
-                PreventRequestForgery::class,
+                VerifyCsrfToken::class, // ✅ diperbaiki
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,

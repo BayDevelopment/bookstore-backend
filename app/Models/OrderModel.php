@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class OrderModel extends Model
 {
@@ -45,5 +46,14 @@ class OrderModel extends Model
     public function book()
     {
         return $this->belongsTo(BookModel::class, 'book_id');
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($model) {
+            if ($model->payment_proof && Storage::disk('public')->exists($model->payment_proof)) {
+                Storage::disk('public')->delete($model->payment_proof);
+            }
+        });
     }
 }
