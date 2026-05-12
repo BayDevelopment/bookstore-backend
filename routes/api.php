@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\FakultasController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\PdfController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,8 +20,10 @@ Route::post('/register',     [AuthController::class, 'register']);
 Route::post('/login',        [AuthController::class, 'login']);
 Route::post('/email/resend', [AuthController::class, 'resendVerification']);
 
-Route::get('/books',      [BookController::class, 'index']);
+// routes/api.php
+Route::get('/books', [BookController::class, 'index']);
 Route::get('/books/{id}', [BookController::class, 'show']);
+Route::post('/books/{id}', [BookController::class, 'incrementViewCount']);
 
 Route::get('/categories',      [CategoryController::class, 'index'])->middleware('throttle:60,1');
 Route::get('/fakultas',        [FakultasController::class, 'fakultas']);
@@ -79,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Generate signed download URL — butuh login + ownership dicek di controller
     Route::get('/orders/{order}/download-link/{book}', [DownloadController::class, 'generateLink']);
+    Route::post(
+        '/orders/{orderId}/pdf-token/{bookId}',
+        [PdfController::class, 'issueToken']
+    );
 
     // Profile
     Route::get('/profile',             [ProfileController::class, 'show']);

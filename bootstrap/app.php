@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\PurgePdfTokens;
 use App\Http\Middleware\DownloadProtectMiddleware;
 use App\Http\Middleware\EnsureEmailVerified;
 use App\Http\Middleware\EnsureOrderOwner;
@@ -26,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'order.owner' => EnsureOrderOwner::class,
         ]);
     })
+    ->withCommands([
+        PurgePdfTokens::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

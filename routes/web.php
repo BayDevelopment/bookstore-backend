@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PdfController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,3 +21,7 @@ Route::get('/reset-password/{token}', function (Request $request, $token) {
             . '&email=' . urlencode($email)  // ✅ tambah email
     );
 })->name('password.reset');
+
+Route::get('/pdf/view', [PdfController::class, 'viewPdf'])
+    ->name('pdf.view')
+    ->middleware('throttle:30,1');

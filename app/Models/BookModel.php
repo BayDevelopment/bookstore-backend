@@ -13,6 +13,7 @@ class BookModel extends Model
         'category_id',
         'fakultas_id',
         'cover',
+        'views',
         'description',
         'has_print',
         'price_print',
