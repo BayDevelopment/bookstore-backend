@@ -110,7 +110,7 @@ class PaymentsTable
                     DeleteAction::make()
                         ->requiresConfirmation()
                         ->modalHeading('Hapus metode pembayaran?')
-                        ->modalDescription('Data akan dihapus (soft delete).')
+                        ->modalDescription('Data akan dihapus.')
                         ->successNotification(
                             Notification::make()
                                 ->title('Berhasil')

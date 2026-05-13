@@ -58,4 +58,17 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Can
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+    // ── Activity Log Relation ──────────────────────────────────────────────
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+    public function fakultas()
+    {
+        return $this->belongsTo(FakultasModel::class, 'fakultas_id');
+    }
+    public function prodi()
+    {
+        return $this->belongsTo(ProdiModel::class, 'prodi_id');
+    }
 }

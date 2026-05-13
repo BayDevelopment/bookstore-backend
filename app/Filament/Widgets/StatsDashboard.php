@@ -56,7 +56,7 @@ class StatsDashboard extends StatsOverviewWidget
                 ->description('Total buku')
                 ->color('primary'),
 
-            Stat::make('Customer', $this->applyDateFilter(User::query())->count())
+            Stat::make('Customer', $this->applyDateFilter(User::query()->where('role', 'customer'))->count())
                 ->description('Total customer')
                 ->color('success'),
 

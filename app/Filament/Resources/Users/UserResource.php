@@ -1,60 +1,58 @@
 <?php
 
-namespace App\Filament\Resources\Payments;
+namespace App\Filament\Resources\Users;
 
-use App\Filament\Resources\Payments\Pages\CreatePayment;
-use App\Filament\Resources\Payments\Pages\EditPayment;
-use App\Filament\Resources\Payments\Pages\ListPayments;
-use App\Filament\Resources\Payments\Schemas\PaymentForm;
-use App\Filament\Resources\Payments\Tables\PaymentsTable;
-use App\Models\Payment;
-use App\Models\PaymentModel;
+use App\Filament\Resources\Users\Pages\CreateUser;
+use App\Filament\Resources\Users\Pages\EditUser;
+use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Filament\Resources\Users\Schemas\UserForm;
+use App\Filament\Resources\Users\Tables\UsersTable;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class PaymentResource extends Resource
+class UserResource extends Resource
 {
-    protected static ?string $model = PaymentModel::class;
+    protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'name';
-
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
     }
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Data';
+        return 'Monitoring';
     }
     public static function getNavigationSort(): ?int
     {
-        return 1; // ganti angka sesuai urutan yang lo mau
+        return 3; // ganti angka sesuai urutan yang lo mau
     }
     public static function getModelLabel(): string
     {
-        return 'Payment';
+        return 'Users';
     }
     public static function getPluralModelLabel(): string
     {
-        return 'Data Payment';
+        return 'Data Users';
     }
-    protected static ?string $navigationLabel = 'Payment';
-    protected static ?int    $navigationSort  = 5;
+    protected static ?string $navigationLabel = 'Users';
+    protected static ?int    $navigationSort  = 2;
     // LAST ADD
 
     public static function form(Schema $schema): Schema
     {
-        return PaymentForm::configure($schema);
+        return UserForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return PaymentsTable::configure($table);
+        return UsersTable::configure($table);
     }
 
     public static function getRelations(): array
@@ -67,9 +65,9 @@ class PaymentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListPayments::route('/'),
-            'create' => CreatePayment::route('/create'),
-            'edit' => EditPayment::route('/{record}/edit'),
+            'index' => ListUsers::route('/'),
+            'create' => CreateUser::route('/create'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

@@ -52,11 +52,11 @@ class CategoriesTable
                     DeleteAction::make()
                         ->requiresConfirmation()
                         ->modalHeading('Hapus data?')
-                        ->modalDescription('Data akan dipindahkan ke trash (bisa dikembalikan).')
+                        ->modalDescription('Data akan dipindahkan ke trash.')
                         ->successNotification(
                             Notification::make()
                                 ->title('Berhasil')
-                                ->body('Data berhasil dihapus (soft delete)')
+                                ->body('Data berhasil dihapus')
                                 ->success()
                         ),
                 ])

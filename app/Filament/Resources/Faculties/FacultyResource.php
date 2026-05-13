@@ -31,6 +31,10 @@ class FacultyResource extends Resource
     {
         return 'Master Data';
     }
+    public static function getNavigationSort(): ?int
+    {
+        return 1; // ganti angka sesuai urutan yang lo mau
+    }
     public static function getModelLabel(): string
     {
         return 'Fakultas';

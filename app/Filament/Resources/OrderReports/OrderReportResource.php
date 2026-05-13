@@ -33,6 +33,10 @@ class OrderReportResource extends Resource
     {
         return 'Manajemen Transaksi';
     }
+    public static function getNavigationSort(): ?int
+    {
+        return 2; // ganti angka sesuai urutan yang lo mau
+    }
 
     public static function getModelLabel(): string
     {
