@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\FakultasModel;
 use App\Models\ProdiModel;
 use App\Models\User;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password as PasswordFacade; // ✅ FIX
+use Illuminate\Support\Facades\Password as PasswordFacade;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
 
@@ -79,7 +81,6 @@ class AuthController extends Controller
             'password.confirmed'   => 'Konfirmasi password tidak cocok',
         ]);
 
-        // optional: sebenarnya gak wajib find kalau cuma simpan ID
         FakultasModel::findOrFail($request->fakultas_id);
         ProdiModel::findOrFail($request->prodi_id);
 
@@ -92,6 +93,9 @@ class AuthController extends Controller
             'prodi_id'    => $request->prodi_id,
             'role'        => 'customer',
         ]);
+
+        // ── Trigger activity log register ──────────────────────────────────
+        event(new Registered($user));
 
         $user->sendEmailVerificationNotification();
 
@@ -152,6 +156,9 @@ class AuthController extends Controller
         cache()->forget($key);
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // ── Trigger activity log login ─────────────────────────────────────
+        event(new Login('sanctum', $user, false));
 
         return response()->json([
             'message'        => 'Login berhasil',

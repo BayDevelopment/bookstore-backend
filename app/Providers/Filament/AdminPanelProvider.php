@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->passwordReset(CustomRequestPasswordReset::class) // ✅ cukup ini
+            ->passwordReset(CustomRequestPasswordReset::class)
             ->font('poppins')
             ->colors([
                 'primary' => Color::Amber,
